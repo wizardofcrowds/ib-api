@@ -30,6 +30,7 @@ module IB
                                    [:start_date, :datetime],
                                    [:end_date, :datetime],
                                    [:count, :int]
+      # ["17", "2", "20210201  19:54:44", "20210201  19:58:04", "4", "1612238040", "1.28265", "1.28270", "1.28265", "1.28270", "-1", "-1.00000", "-1", "1612238100", "1.28270", "1.28295", "1.28270", "1.28285", "-1", "-1.00000", "-1", "1612238160", "1.28285", "1.28295", "1.28275", "1.28280", "-1", "-1.00000", "-1", "1612238220", "1.28280", "1.28290", "1.28275", "1.28285", "-1", "-1.00000", "-1"]
       class HistoricalData
         attr_accessor :results
 				using IBSupport  # extended Array-Class  from abstract_message
@@ -57,6 +58,30 @@ module IB
         end
       end # HistoricalData
 
+      HistoricalDataUpdate = def_message [90,0],
+                                   [:request_id, :int],
+                                   [:_, :int]
+      # ["90", "2", "-1", "1612238280", "1.28285", "1.28275", "1.28285", "1.28275", "-1.0", "-1"]
+      class HistoricalDataUpdate
+        attr_accessor :results
+        using IBSupport  # extended Array-Class  from abstract_message
+
+        def load
+          super
+          # See Rust impl at https://github.com/sparkstartconsulting/IBKR-API-Rust/blob/d4e89c39a57a2b448bb912196ebc42acfb915be7/src/core/decoder.rs#L1097
+          @results = [ IB::Bar.new(:time => buffer.read_int_date,
+                                   :open => buffer.read_decimal,
+                                   :close => buffer.read_decimal,
+                                   :high => buffer.read_decimal,
+                                   :low => buffer.read_decimal,
+                                   :wap => buffer.read_decimal,
+                                   :volume => buffer.read_int) ]
+        end
+
+        def to_human
+          "<HistoricalDataUpdate: #{request_id} #{@results.inspect}>"
+        end
+      end # HistoricalDataUpdate
 
 				HistogramData  = def_message( [89,0], 
 																	[:request_id, :int], 
